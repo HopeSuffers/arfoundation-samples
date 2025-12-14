@@ -5,41 +5,34 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/share/powershell || true
+          sudo rm -rf /usr/local/share/chromium || true
+          sudo apt-get clean
+          docker system prune -af || true
+          df -h    
+      
       - name: Cache Unity Library
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-${{ runner.os }}-${{ hashFiles('Packages/manifest.json') }}
+          key: Library-Android-${{ runner.os }}-${{ hashFiles('Packages/manifest.json') }}
           restore-keys: |
-            Library-${{ runner.os }}-
-            Library-
+            Library-Android-${{ runner.os }}-
+            Library-Android-
 
-      #- name: Run Unity tests
-      #  uses: game-ci/unity-test-runner@v4
-      #  env:
-      #    UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-      #    UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-      #    UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-      #  with:
-      #    projectPath: .
-      #    githubToken: ${{ secrets.GITHUB_TOKEN }}
-         
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: artifacts
-
-      - name: Build (Standalone Windows 64)
+      - name: Build Android
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -47,10 +40,41 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: .
-          targetPlatform: StandaloneWindows64
+          targetPlatform: Android
 
-      - name: Upload build
+      - name: Upload Android build
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ github.run_number }}
+          name: android-build-${{ github.run_number }}
+          path: build
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-iOS-${{ runner.os }}-${{ hashFiles('Packages/manifest.json') }}
+          restore-keys: |
+            Library-iOS-${{ runner.os }}-
+            Library-iOS-
+
+      - name: Build iOS
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          targetPlatform: iOS
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-${{ github.run_number }}
           path: build
