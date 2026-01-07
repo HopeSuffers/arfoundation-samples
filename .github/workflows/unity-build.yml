@@ -5,49 +5,6 @@ on:
   pull_request:
 
 jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Free disk space
-        run: |
-          df -h
-          sudo rm -rf /usr/local/lib/android || true
-          sudo rm -rf /usr/share/dotnet || true
-          sudo rm -rf /opt/ghc || true
-          sudo rm -rf /usr/local/share/boost || true
-          sudo rm -rf /usr/local/share/powershell || true
-          sudo rm -rf /usr/local/share/chromium || true
-          sudo apt-get clean
-          docker system prune -af || true
-          df -h    
-      
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-Android-${{ runner.os }}-${{ hashFiles('Packages/manifest.json') }}
-          restore-keys: |
-            Library-Android-${{ runner.os }}-
-            Library-Android-
-
-      - name: Build Android
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          projectPath: .
-          targetPlatform: Android
-
-      - name: Upload Android build
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-build-${{ github.run_number }}
-          path: build
-
   build-ios:
     name: Build iOS
     runs-on: macos-latest
